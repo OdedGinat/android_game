@@ -1,8 +1,12 @@
 package com.example.tears_dont_fall.Activities;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -10,6 +14,8 @@ import android.widget.CompoundButton;
 import com.example.tears_dont_fall.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import im.delight.android.location.SimpleLocation;
+
 
 public class MainActivity extends AppCompatActivity {
     private MaterialButton newGameBtn;
@@ -17,6 +23,10 @@ public class MainActivity extends AppCompatActivity {
     private SwitchMaterial sensorBtn;
     private SwitchMaterial hardmodeBtn;
     private SwitchMaterial nightmareBtn;
+    private boolean isSensorMode;
+    private double latitude;
+    private double longitude;
+    private SimpleLocation simpleLocation;
 
     private int difficulty ;
 
@@ -25,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        this.simpleLocation = new SimpleLocation(this);
+        locationPermission(simpleLocation);
         getUIElements();
         switchListener();
         buttonListener();
@@ -38,6 +50,10 @@ public class MainActivity extends AppCompatActivity {
     private void buttonListener(){
         newGameBtn.setOnClickListener(view -> {
             openGameScreen();
+        });
+
+        scoreboardBtn.setOnClickListener(view -> {
+            openGradesScreen();
         });
     }
 
@@ -67,10 +83,33 @@ public class MainActivity extends AppCompatActivity {
         nightmareBtn.setVisibility(View.INVISIBLE);
     }
 
+    private void openGradesScreen() {
+        Intent scoreIntent = new Intent(this, ScoreBoardActivity.class);
+        startActivity(scoreIntent);
+        finish();
+    }
+
     private void openGameScreen() {
         Intent gameIntent = new Intent(this, GameActivity.class);
         gameIntent.putExtra(GameActivity.KEY_DIFFICULTY, difficulty);
+        gameIntent.putExtra(GameActivity.KEY_LATITUDE,latitude);
+        gameIntent.putExtra(GameActivity.KEY_LONGITUDE,longitude);
+        gameIntent.putExtra(GameActivity.KEY_SENSOR, isSensorMode);
         startActivity(gameIntent);
         finish();
+    }
+
+    private void locationPermission(SimpleLocation location) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
+        }
+        putLatLon(location);
+    }
+
+    private void putLatLon(SimpleLocation location){
+        location.beginUpdates();
+        this.latitude = location.getLatitude();
+        this.longitude = location.getLongitude();
     }
 }
